@@ -34,4 +34,5 @@ public interface PocHeuristicService extends OpenmrsService {
 	List<Encounter> findEncountersWithTestOrdersByPatient(String patientUUID);
 	
 	List<Encounter> findEncountersByPatientAndEncounterType(Patient patient, EncounterType encounterType);
+	
 }

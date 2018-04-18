@@ -169,6 +169,8 @@ public class TestOrderResultServiceImpl extends BaseOpenmrsService implements Te
 		Context.getObsService().voidObs(oldObs, reason);
 		Context.getObsService().voidObs(oldObs.getObsGroup(), reason);
 		
+		this.deleteObsDateTimeForEncounterwithoutAnyMoreObsExams(encounter, oldObs);
+		
 		final TestOrder newTestOrder = new TestOrder();
 		newTestOrder.setConcept(order.getConcept());
 		newTestOrder.setPatient(order.getPatient());
@@ -179,6 +181,33 @@ public class TestOrderResultServiceImpl extends BaseOpenmrsService implements Te
 		
 		this.encounterService.saveEncounter(encounter);
 		this.orderService.voidOrder(order, "voided due order revision");
+	}
+	
+	private void deleteObsDateTimeForEncounterwithoutAnyMoreObsExams(final Encounter encounter, final Obs oldObs) {
+		
+		final Set<Obs> allObs = encounter.getAllObs(false);
+		
+		final Concept dateOfApplicationLabTestsConcept = this.conceptService
+		        .getConceptByUuid(OPENMRSUUIDs.DATA_PEDIDO_EXAMES_LABORATORIAIS_FORM_UUID);
+		
+		final Concept orderSequenceConcept = this.conceptService.getConceptByUuid(OPENMRSUUIDs.REFERENCE_TYPE);
+		
+		Obs obsDateExams = null;
+		final List<Obs> remainingTestResults = new ArrayList<>();
+		for (final Obs obs : allObs) {
+			
+			if (!obs.isObsGrouping() && !oldObs.equals(obs)
+			        && !dateOfApplicationLabTestsConcept.equals(obs.getConcept())
+			        && !orderSequenceConcept.equals(obs.getConcept())) {
+				remainingTestResults.add(obs);
+			} else if (dateOfApplicationLabTestsConcept.equals(obs.getConcept())) {
+				obsDateExams = obs;
+			}
+		}
+		
+		if (remainingTestResults.isEmpty() && (obsDateExams != null)) {
+			Context.getObsService().voidObs(obsDateExams, "voided due order revision");
+		}
 	}
 	
 	@Override
